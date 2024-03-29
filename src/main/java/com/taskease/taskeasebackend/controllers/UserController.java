@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
     @GetMapping("/kaas")
     public String index() {
-        return "Je vader is een hamster en je moeder ruikt naar vlierbessen!";
+        return "Je vader is een konijn en je moeder ruikt naar vlierbessen!";
     }
 }
