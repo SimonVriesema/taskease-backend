@@ -9,7 +9,7 @@ import jakarta.persistence.Id;
 public class User   {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    String id;
+    Long id;
     String firstName;
     String preposition;
     String lastName;
