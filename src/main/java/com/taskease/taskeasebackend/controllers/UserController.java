@@ -19,12 +19,11 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("")
+    @PostMapping
     @ApiOperation(value = "Create a user and store in the database")
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Successfully created the user"),
     })
-
     public ResponseEntity<User> createUser(@RequestBody User user) {
         User createdUser = userService.createUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
