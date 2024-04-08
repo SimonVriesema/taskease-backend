@@ -12,5 +12,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     <S extends User> S save(S user);
     @Override
     Optional<User> findById(Long aLong);
-    User createUser(User user);
 }

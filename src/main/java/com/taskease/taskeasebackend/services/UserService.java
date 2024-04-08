@@ -12,13 +12,16 @@ public class UserService {
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
+
     public void saveUser(User user) {
         userRepository.save(user);
     }
+
     public User getUserById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
+
     public User createUser(User user) {
-        return userRepository.createUser(user);
+        return userRepository.save(user);
     }
 }
