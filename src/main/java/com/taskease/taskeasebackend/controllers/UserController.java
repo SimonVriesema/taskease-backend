@@ -5,7 +5,6 @@ import com.taskease.taskeasebackend.services.UserService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/users")
@@ -58,17 +58,6 @@ public class UserController {
     })
     public ResponseEntity<Void> deleteUserById(@PathVariable Long id) {
         userService.deleteUserById(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
-
-    @DeleteMapping
-    @ApiOperation(value = "Delete user", notes = "Delete user by providing the user object")
-    @ApiResponses(value = {
-            @ApiResponse(code = 204, message = "Successfully deleted the user"),
-            @ApiResponse(code = 404, message = "The user you were trying to delete is not found"),
-    })
-    public ResponseEntity<Void> deleteUser(@RequestBody User user) {
-        userService.deleteUser(user);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 

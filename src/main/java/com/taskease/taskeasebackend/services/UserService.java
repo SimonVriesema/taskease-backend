@@ -2,7 +2,6 @@ package com.taskease.taskeasebackend.services;
 
 import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.repositories.UserRepository;
-import jakarta.transaction.UserTransaction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +20,6 @@ public class UserService {
         return userRepository.save(user);
     }
     public void deleteUserById(Long id) {userRepository.deleteById(id);}
-    public void deleteUser(User user) {userRepository.delete(user);}
     public User getUserByUsername(String username) { return userRepository.findByUsername(username).orElse(null);}
     public User getUserByEmail(String email) { return userRepository.findByEmail(email).orElse(null);}
 }
