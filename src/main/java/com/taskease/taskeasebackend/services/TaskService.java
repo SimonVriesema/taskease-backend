@@ -43,10 +43,5 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    public List<Task> getTasksByStatus(Status status) {return taskRepository.findByStatus(status);}
-    public List<Task> getTasksByPriority(Priority priority) {return taskRepository.findByPriority(priority);}
-    public List<Task> getTasksByDueDate(LocalDate dueDate) {return taskRepository.findByDueDate(dueDate);}
     public List<Task> getTasksByAssignedUser(User assignedUser) {return taskRepository.findByAssignedUser(assignedUser);}
-    public List<Task> getTasksByTitleContaining(String keyword) {return taskRepository.findByTitleContaining(keyword);}
-
 }
