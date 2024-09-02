@@ -22,4 +22,13 @@ public class UserService {
     public void deleteUserById(Long id) {userRepository.deleteById(id);}
     public User getUserByUsername(String username) { return userRepository.findByUsername(username).orElse(null);}
     public User getUserByEmail(String email) { return userRepository.findByEmail(email).orElse(null);}
+
+    public User updateUser(Long id, User user) {
+        if (userRepository.existsById(id)) {
+            user.setId(id);
+            return userRepository.save(user);
+        } else {
+            return null;
+        }
+    }
 }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -100,5 +101,20 @@ public class UserController {
     public ResponseEntity<Boolean> doesUserExistByEmail(@PathVariable String email) {
         User user = userService.getUserByEmail(email);
         return ResponseEntity.ok(user != null);
+    }
+
+    @PutMapping("/{id}")
+    @ApiOperation(value = "Update user by ID", notes = "Update user details by providing their ID")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully updated the user"),
+            @ApiResponse(code = 404, message = "The user you were trying to update is not found"),
+    })
+    public ResponseEntity<User> updateUserById(@PathVariable Long id, @RequestBody User user) {
+        User updatedUser = userService.updateUser(id, user);
+        if (updatedUser != null) {
+            return ResponseEntity.ok(updatedUser);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
