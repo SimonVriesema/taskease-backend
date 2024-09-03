@@ -1,10 +1,13 @@
 package com.taskease.taskeasebackend.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +16,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -42,5 +47,10 @@ public class User {
     private LocalDate dateOfBirth;
     @Size(max = 100)
     private String jobTitle;
+//    @ManyToMany(mappedBy = "users")
+//    private List<Project> projects = new ArrayList<>();
+    @OneToMany(mappedBy = "assignedUser")
+    @JsonManagedReference
+    private List<Task> tasks;
 }
 

@@ -4,5 +4,7 @@ public enum Status {
     TODO,
     IN_PROGRESS,
     COMPLETED,
-    ON_HOLD
+    ON_HOLD,
+    NOT_STARTED,
+    CANCELLED
 }

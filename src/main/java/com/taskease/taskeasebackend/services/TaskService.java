@@ -1,14 +1,11 @@
 package com.taskease.taskeasebackend.services;
 
-import com.taskease.taskeasebackend.enums.Priority;
-import com.taskease.taskeasebackend.enums.Status;
 import com.taskease.taskeasebackend.models.Task;
 import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.repositories.TaskRepository;
 import com.taskease.taskeasebackend.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
