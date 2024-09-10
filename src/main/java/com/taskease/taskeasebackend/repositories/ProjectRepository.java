@@ -19,5 +19,5 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Override
     boolean existsById(Long aLong);
 
-//    List<Project> findByUsers_IdOrProjectLeader_Id(Long userId, Long projectLeaderId);
+    List<Project> findByProjectLeader_Id(Long projectLeaderId);
 }

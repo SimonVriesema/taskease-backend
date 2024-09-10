@@ -25,12 +25,13 @@ public class ProjectService {
     }
 
     public Project saveProject(Project project) {
-        if (project.getTitle() == null || project.getTitle().isEmpty()) {
-            throw new IllegalArgumentException("Project title cannot be null or empty");
-        }
-
         if (project.getCreatedDate() == null) {
             project.setCreatedDate(LocalDate.from(LocalDateTime.now()));
+        }
+
+        if (project.getProjectLeader() != null) {
+            Optional<User> userOpt = userRepository.findById(project.getProjectLeader().getId());
+            userOpt.ifPresent(project::setProjectLeader);
         }
 
         try {
@@ -54,9 +55,22 @@ public class ProjectService {
         return projectRepository.existsById(projectId);
     }
 
-//    public List<Project> getProjectsByUserId(Long userId) {
-//        return projectRepository.findByUsers_IdOrProjectLeader_Id(userId, userId);
-//    }
+    public List<Project> getProjectsByUserId(Long userId) {
+        List<Project> projects = projectRepository.findByProjectLeader_Id(userId);
+        if (projects.isEmpty()) {
+            throw new ProjectNotFoundException(String.format("No projects found for user ID %d", userId));
+        }
+        return projects;
+    }
+
+    public Project updateProject(Long id, Project project) {
+        if (projectRepository.existsById(id)) {
+            project.setId(id);
+            return projectRepository.save(project);
+        } else {
+            return null;
+        }
+    }
 
 //    public Project addUserToProject(Long projectId, Long userId) {
 //        Optional<Project> projectOpt = projectRepository.findById(projectId);
