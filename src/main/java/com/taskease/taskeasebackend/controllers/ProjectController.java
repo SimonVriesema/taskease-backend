@@ -82,7 +82,7 @@ public class ProjectController {
     })
     public ResponseEntity<Void> updateProjectById(@PathVariable Long id, @RequestBody Project project) {
         try {
-            if (projectService.findById(id)) {
+            if (projectService.doesProjectExist(id)) {
                 projectService.updateProject(id, project);
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
             } else {

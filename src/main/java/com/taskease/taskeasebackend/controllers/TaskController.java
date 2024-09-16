@@ -1,7 +1,10 @@
 package com.taskease.taskeasebackend.controllers;
 
+import com.taskease.taskeasebackend.dto.createTaskForProjectRequest;
+import com.taskease.taskeasebackend.models.Project;
 import com.taskease.taskeasebackend.models.Task;
 import com.taskease.taskeasebackend.models.User;
+import com.taskease.taskeasebackend.services.ProjectService;
 import com.taskease.taskeasebackend.services.TaskService;
 import com.taskease.taskeasebackend.services.UserService;
 import io.swagger.annotations.ApiOperation;
@@ -26,11 +29,13 @@ import java.util.List;
 public class TaskController {
     private final TaskService taskService;
     private final UserService userService;
+    private ProjectService projectService;
 
     @Autowired
-    public TaskController(TaskService taskService, UserService userService) {
+    public TaskController(TaskService taskService, UserService userService, ProjectService projectService) {
         this.taskService = taskService;
         this.userService = userService;
+        this.projectService = projectService;
     }
 
     @PostMapping
@@ -42,6 +47,40 @@ public class TaskController {
     })
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
         try {
+            Task createdTask = taskService.createTask(task);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/project/{projectId}")
+    @ApiOperation(value = "Create a task for an existing project and store in the database")
+    @ApiResponses(value = {
+            @ApiResponse(code = 201, message = "Successfully created the task"),
+            @ApiResponse(code = 400, message = "Invalid input data"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<Task> createTaskForProject(@PathVariable Long projectId, @RequestBody createTaskForProjectRequest createTaskRequest) {
+        try {
+            Project project = projectService.findById(projectId);
+            if (project == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            }
+
+            Task task = new Task();
+            task.setTitle(createTaskRequest.getTitle());
+            task.setDescription(createTaskRequest.getDescription());
+            task.setStatus(createTaskRequest.getStatus());
+            task.setPriority(createTaskRequest.getPriority());
+            task.setDueDate(createTaskRequest.getDueDate());
+            task.setProject(project);
+
+            if (createTaskRequest.getAssignedUserId() != null) {
+                User assignedUser = userService.getUserById(createTaskRequest.getAssignedUserId());
+                task.setAssignedUser(assignedUser);
+            }
+
             Task createdTask = taskService.createTask(task);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
         } catch (Exception e) {

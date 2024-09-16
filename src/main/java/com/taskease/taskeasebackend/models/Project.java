@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -22,6 +23,8 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -53,6 +56,9 @@ public class Project {
     @Column(nullable = false)
     @JsonProperty("status")
     private Status status;
+
+    @ManyToMany(mappedBy = "projects")
+    private List<User> users = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

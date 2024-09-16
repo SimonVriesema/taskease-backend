@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -17,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -29,7 +32,6 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @NotNull
     @Email
     @Column(unique = true)
@@ -48,10 +50,14 @@ public class User {
     private LocalDate dateOfBirth;
     @Size(max = 100)
     private String jobTitle;
-//    @ManyToMany(mappedBy = "users")
-//    private List<Project> projects = new ArrayList<>();
+    @ManyToMany
+    @JoinTable(
+            name = "user_projects",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "project_id")
+    )    private List<Project> projects = new ArrayList<>();
     @OneToMany(mappedBy = "assignedUser")
     @JsonManagedReference
-    private List<Task> tasks;
+    private List<Task> tasks = new ArrayList<>();
 }
 

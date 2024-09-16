@@ -48,11 +48,19 @@ public class ProjectService {
         projectRepository.deleteById(projectId);
     }
 
-    public boolean findById(Long projectId) {
+    public boolean doesProjectExist(Long projectId) {
         if (projectId == null) {
             throw new IllegalArgumentException("Project ID cannot be null");
         }
         return projectRepository.existsById(projectId);
+    }
+
+    public Project findById(Long projectId) {
+        if (projectId == null) {
+            throw new IllegalArgumentException("Project ID cannot be null");
+        }
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(String.format("Project with ID %d not found", projectId)));
     }
 
     public List<Project> getProjectsByUserId(Long userId) {
@@ -71,26 +79,4 @@ public class ProjectService {
             return null;
         }
     }
-
-//    public Project addUserToProject(Long projectId, Long userId) {
-//        Optional<Project> projectOpt = projectRepository.findById(projectId);
-//        if (projectOpt.isEmpty()) {
-//            throw new ProjectNotFoundException(String.format("Project with ID %d not found", projectId));
-//        }
-//
-//        Optional<User> userOpt = userRepository.findById(userId);
-//        if (userOpt.isEmpty()) {
-//            throw new IllegalArgumentException(String.format("User with ID %d not found", userId));
-//        }
-//
-//        Project project = projectOpt.get();
-//        User user = userOpt.get();
-//        project.getUsers().add(user);
-//
-//        try {
-//            return projectRepository.save(project);
-//        } catch (Exception e) {
-//            throw new ProjectSaveException("Failed to save project", e);
-//        }
-//    }
 }
