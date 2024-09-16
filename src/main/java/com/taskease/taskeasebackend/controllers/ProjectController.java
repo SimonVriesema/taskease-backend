@@ -1,6 +1,12 @@
 package com.taskease.taskeasebackend.controllers;
 
+import com.taskease.taskeasebackend.dto.request.CreateProjectRequest;
+import com.taskease.taskeasebackend.dto.response.UserDTO;
 import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
+import com.taskease.taskeasebackend.exceptions.UserAlreadyInProjectException;
+import com.taskease.taskeasebackend.models.User;
+import com.taskease.taskeasebackend.services.UserService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Optional;
 
 
 @RestController
@@ -30,27 +35,37 @@ import java.util.Optional;
 public class ProjectController {
     private static final Logger logger = LoggerFactory.getLogger(ProjectController.class);
     private final ProjectService projectService;
+    private final UserService userService;
 
     @Autowired
-    public ProjectController(ProjectService projectService) {
+    public ProjectController(ProjectService projectService, UserService userService) {
         this.projectService = projectService;
+        this.userService = userService;
     }
 
     @PostMapping()
-    @ApiOperation(value = "Create a project and store in the database")
+    @ApiOperation(value = "Create a new project")
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Successfully created the project"),
-            @ApiResponse(code = 400, message = "Invalid input, object invalid"),
-            @ApiResponse(code = 409, message = "An existing project already exists"),
+            @ApiResponse(code = 400, message = "Invalid input data"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
-    public ResponseEntity<Project> createProject(@RequestBody Project project) {
-        logger.info("Received Project: {}", project);
+    public ResponseEntity<Project> createProject(@RequestBody @Valid CreateProjectRequest createProjectRequest) {
         try {
+            User projectLeader = userService.getUserById(createProjectRequest.getProjectLeaderId());
+            if (projectLeader == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            }
+
+            Project project = new Project();
+            project.setTitle(createProjectRequest.getTitle());
+            project.setDescription(createProjectRequest.getDescription());
+            project.setProjectLeader(projectLeader);
+            project.setStatus(createProjectRequest.getStatus());
+            project.getUsers().add(projectLeader);
             Project createdProject = projectService.saveProject(project);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -113,21 +128,40 @@ public class ProjectController {
         }
     }
 
-//    @PostMapping("/{projectId}/users/{userId}")
-//    @ApiOperation(value = "Add a user to a project", notes = "Add a user to the specified project by their IDs")
-//    @ApiResponses(value = {
-//            @ApiResponse(code = 200, message = "Successfully added the user to the project"),
-//            @ApiResponse(code = 404, message = "Project or user not found"),
-//            @ApiResponse(code = 500, message = "Internal server error")
-//    })
-//    public ResponseEntity<Project> addUserToProject(@PathVariable Long projectId, @PathVariable Long userId) {
-//        try {
-//            Project updatedProject = projectService.addUserToProject(projectId, userId);
-//            return ResponseEntity.status(HttpStatus.OK).body(updatedProject);
-//        } catch (ProjectNotFoundException | IllegalArgumentException e) {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-//        }
-//    }
+    @PostMapping("/{projectId}/addUser/{userId}")
+    @ApiOperation(value = "Add an existing user to a project")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully added the user to the project"),
+            @ApiResponse(code = 404, message = "Project or user not found"),
+            @ApiResponse(code = 409, message = "User is already in the project"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<Project> addUserToProject(@PathVariable Long projectId, @PathVariable Long userId) {
+        try {
+            Project updatedProject = projectService.addUserToProject(projectId, userId);
+            return ResponseEntity.ok(updatedProject);
+        } catch (UserAlreadyInProjectException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/{projectId}/users")
+    @ApiOperation(value = "Get all users from a project")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully retrieved the users"),
+            @ApiResponse(code = 404, message = "Project not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<List<UserDTO>> getUsersByProjectId(@PathVariable Long projectId) {
+        try {
+            List<UserDTO> users = projectService.getUsersByProjectId(projectId);
+            return ResponseEntity.ok(users);
+        } catch (ProjectNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

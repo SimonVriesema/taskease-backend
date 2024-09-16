@@ -1,4 +1,4 @@
-package com.taskease.taskeasebackend.dto;
+package com.taskease.taskeasebackend.dto.request;
 
 import com.taskease.taskeasebackend.enums.Priority;
 import com.taskease.taskeasebackend.enums.Status;
@@ -10,7 +10,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class createTaskForProjectRequest {
+public class CreateTaskForProjectRequest {
     @NotBlank(message = "Task title cannot be null or empty")
     @Size(max = 50)
     private String title;

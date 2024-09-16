@@ -1,9 +1,11 @@
 package com.taskease.taskeasebackend.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -50,12 +52,9 @@ public class User {
     private LocalDate dateOfBirth;
     @Size(max = 100)
     private String jobTitle;
-    @ManyToMany
-    @JoinTable(
-            name = "user_projects",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "project_id")
-    )    private List<Project> projects = new ArrayList<>();
+    @ManyToMany(mappedBy = "users")
+    @JsonIgnore
+    private List<Project> projects = new ArrayList<>();
     @OneToMany(mappedBy = "assignedUser")
     @JsonManagedReference
     private List<Task> tasks = new ArrayList<>();

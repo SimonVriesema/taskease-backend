@@ -1,6 +1,6 @@
 package com.taskease.taskeasebackend.controllers;
 
-import com.taskease.taskeasebackend.dto.createTaskForProjectRequest;
+import com.taskease.taskeasebackend.dto.request.CreateTaskForProjectRequest;
 import com.taskease.taskeasebackend.models.Project;
 import com.taskease.taskeasebackend.models.Task;
 import com.taskease.taskeasebackend.models.User;
@@ -61,7 +61,7 @@ public class TaskController {
             @ApiResponse(code = 400, message = "Invalid input data"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
-    public ResponseEntity<Task> createTaskForProject(@PathVariable Long projectId, @RequestBody createTaskForProjectRequest createTaskRequest) {
+    public ResponseEntity<Task> createTaskForProject(@PathVariable Long projectId, @RequestBody CreateTaskForProjectRequest createTaskRequest) {
         try {
             Project project = projectService.findById(projectId);
             if (project == null) {

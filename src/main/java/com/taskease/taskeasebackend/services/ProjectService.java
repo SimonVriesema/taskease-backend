@@ -1,20 +1,27 @@
 package com.taskease.taskeasebackend.services;
 
+import com.taskease.taskeasebackend.dto.response.UserDTO;
 import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
 import com.taskease.taskeasebackend.exceptions.ProjectSaveException;
 import com.taskease.taskeasebackend.models.Project;
 import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.repositories.ProjectRepository;
 import com.taskease.taskeasebackend.repositories.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
+    private static final Logger logger = LoggerFactory.getLogger(ProjectService.class);
+
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
 
@@ -68,6 +75,8 @@ public class ProjectService {
         if (projects.isEmpty()) {
             throw new ProjectNotFoundException(String.format("No projects found for user ID %d", userId));
         }
+
+        projects.forEach(project -> project.getUsers().size());
         return projects;
     }
 
@@ -78,5 +87,41 @@ public class ProjectService {
         } else {
             return null;
         }
+    }
+
+    public List<UserDTO> getUsersByProjectId(Long projectId) {
+        Project project = findById(projectId);
+        List<User> users = project.getUsers();
+
+        logger.info("Found {} users for project ID {}", users.size(), projectId);
+
+        return users.stream().map(user -> {
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setUsername(user.getUsername());
+            userDTO.setFirstName(user.getFirstName());
+            userDTO.setLastName(user.getLastName());
+            return userDTO;
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public Project addUserToProject(Long projectId, Long userId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+
+        if (!project.getUsers().contains(user)) {
+            project.getUsers().add(user);
+            user.getProjects().add(project);
+
+            projectRepository.save(project);
+            userRepository.save(user);
+        }
+
+        return project;
     }
 }

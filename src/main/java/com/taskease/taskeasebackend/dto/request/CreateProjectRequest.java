@@ -1,4 +1,4 @@
-package com.taskease.taskeasebackend.dto;
+package com.taskease.taskeasebackend.dto.request;
 
 import com.taskease.taskeasebackend.enums.Status;
 import jakarta.validation.constraints.NotBlank;
