@@ -1,7 +1,9 @@
 package com.taskease.taskeasebackend.controllers;
 
+import com.taskease.taskeasebackend.dto.response.UserDTO;
 import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.services.UserService;
+import com.taskease.taskeasebackend.utils.DTOConvertor;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -17,10 +19,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+
     @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
@@ -31,9 +37,28 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Successfully created the user"),
     })
-    public ResponseEntity<User> createUser(@RequestBody User user) {
+    public ResponseEntity<UserDTO> createUser(@RequestBody User user) {
         User createdUser = userService.createUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        UserDTO userDTO = DTOConvertor.convertToDTO(createdUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userDTO);
+    }
+
+    @GetMapping
+    @ApiOperation(value = "Get all users", notes = "Retrieve a list of all users")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully retrieved the users"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        try {
+            List<User> users = userService.getAllUsers();
+            List<UserDTO> userDTOs = users.stream()
+                    .map(DTOConvertor::convertToDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(userDTOs);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/{id}")
@@ -42,10 +67,11 @@ public class UserController {
             @ApiResponse(code = 200, message = "Successfully retrieved the user"),
             @ApiResponse(code = 404, message = "The user you were trying to reach is not found"),
     })
-    public ResponseEntity<User> findUserById(@PathVariable Long id) {
+    public ResponseEntity<UserDTO> findUserById(@PathVariable Long id) {
         User user = userService.getUserById(id);
         if (user != null) {
-            return ResponseEntity.ok(user);
+            UserDTO userDTO = DTOConvertor.convertToDTO(user);
+            return ResponseEntity.ok(userDTO);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -68,10 +94,11 @@ public class UserController {
             @ApiResponse(code = 200, message = "Successfully retrieved the user"),
             @ApiResponse(code = 404, message = "The user you were trying to reach is not found"),
     })
-    public ResponseEntity<User> findUserByEmail(@PathVariable String email) {
+    public ResponseEntity<UserDTO> findUserByEmail(@PathVariable String email) {
         User user = userService.getUserByEmail(email);
         if (user != null) {
-            return ResponseEntity.ok(user);
+            UserDTO userDTO = DTOConvertor.convertToDTO(user);
+            return ResponseEntity.ok(userDTO);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -83,10 +110,11 @@ public class UserController {
             @ApiResponse(code = 200, message = "Successfully retrieved the user"),
             @ApiResponse(code = 404, message = "The user you were trying to reach is not found"),
     })
-    public ResponseEntity<User> findUserByUsername(@PathVariable String username) {
+    public ResponseEntity<UserDTO> findUserByUsername(@PathVariable String username) {
         User user = userService.getUserByUsername(username);
         if (user != null) {
-            return ResponseEntity.ok(user);
+            UserDTO userDTO = DTOConvertor.convertToDTO(user);
+            return ResponseEntity.ok(userDTO);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -109,10 +137,11 @@ public class UserController {
             @ApiResponse(code = 200, message = "Successfully updated the user"),
             @ApiResponse(code = 404, message = "The user you were trying to update is not found"),
     })
-    public ResponseEntity<User> updateUserById(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<UserDTO> updateUserById(@PathVariable Long id, @RequestBody User user) {
         User updatedUser = userService.updateUser(id, user);
         if (updatedUser != null) {
-            return ResponseEntity.ok(updatedUser);
+            UserDTO userDTO = DTOConvertor.convertToDTO(updatedUser);
+            return ResponseEntity.ok(userDTO);
         } else {
             return ResponseEntity.notFound().build();
         }

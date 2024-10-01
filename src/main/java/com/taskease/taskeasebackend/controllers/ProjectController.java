@@ -34,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 @RestController
 @RequestMapping("/projects")
 public class ProjectController {
@@ -55,7 +54,7 @@ public class ProjectController {
             @ApiResponse(code = 404, message = "No projects found"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
-    public ResponseEntity<List<ProjectDTO>> getProjects(){
+    public ResponseEntity<List<ProjectDTO>> getProjects() {
         try {
             List<Project> projects = projectService.getAllProjects();
             List<ProjectDTO> projectDTOs = projects.stream()
