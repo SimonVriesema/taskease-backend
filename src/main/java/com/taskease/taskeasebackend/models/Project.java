@@ -1,6 +1,5 @@
 package com.taskease.taskeasebackend.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.taskease.taskeasebackend.enums.Status;
 import jakarta.persistence.Column;

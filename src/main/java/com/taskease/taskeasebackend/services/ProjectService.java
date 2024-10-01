@@ -70,6 +70,16 @@ public class ProjectService {
                 .orElseThrow(() -> new ProjectNotFoundException(String.format("Project with ID %d not found", projectId)));
     }
 
+    public List<Project> getAllProjects() {
+        List<Project> projects = projectRepository.findAll();
+
+        if (projects.isEmpty()) {
+            throw new ProjectNotFoundException("No projects found");
+        }
+
+        return  projects;
+    }
+
     public List<Project> getProjectsByUserId(Long userId) {
         List<Project> projects = projectRepository.findByProjectLeader_Id(userId);
         if (projects.isEmpty()) {

@@ -1,11 +1,14 @@
 package com.taskease.taskeasebackend.controllers;
 
 import com.taskease.taskeasebackend.dto.request.CreateProjectRequest;
+import com.taskease.taskeasebackend.dto.response.ProjectDTO;
 import com.taskease.taskeasebackend.dto.response.UserDTO;
+import com.taskease.taskeasebackend.enums.Status;
 import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
 import com.taskease.taskeasebackend.exceptions.UserAlreadyInProjectException;
 import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.services.UserService;
+import com.taskease.taskeasebackend.utils.DTOConvertor;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -41,6 +45,41 @@ public class ProjectController {
     public ProjectController(ProjectService projectService, UserService userService) {
         this.projectService = projectService;
         this.userService = userService;
+    }
+
+    @GetMapping()
+    @ApiOperation(value = "Get all projects", notes = "Retrieve a list of all projects")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully retrieved the projects"),
+            @ApiResponse(code = 404, message = "No projects found"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<List<Project>> getProjects(){
+        try {
+            List<Project> projects = projectService.getAllProjects();
+            return ResponseEntity.ok(projects);
+        } catch (ProjectNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    @GetMapping("/{id}")
+    @ApiOperation(value = "Get project by ID", notes = "Retrieve a project by its ID")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully retrieved the project"),
+            @ApiResponse(code = 404, message = "Project not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<ProjectDTO> getProjectById(@PathVariable long id) {
+        try {
+            Project project = projectService.findById(id);
+            ProjectDTO projectDTO = DTOConvertor.convertToDTO(project);
+            return ResponseEntity.ok(projectDTO);
+        } catch (ProjectNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping()
@@ -110,17 +149,20 @@ public class ProjectController {
         }
     }
 
-    @GetMapping("/{userId}")
+    @GetMapping("/user/{userId}")
     @ApiOperation(value = "Get projects by user ID", notes = "Retrieve projects where the user is either in the users list or is the project leader")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully retrieved the projects"),
             @ApiResponse(code = 404, message = "Projects not found"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
-    public ResponseEntity<List<Project>> getProjectsByUserId(@PathVariable Long userId) {
+    public ResponseEntity<List<ProjectDTO>> getProjectsByUserId(@PathVariable Long userId) {
         try {
             List<Project> projects = projectService.getProjectsByUserId(userId);
-            return ResponseEntity.status(HttpStatus.OK).body(projects);
+            List<ProjectDTO> projectDTOs = projects.stream()
+                    .map(DTOConvertor::convertToDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.status(HttpStatus.OK).body(projectDTOs);
         } catch (ProjectNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
@@ -142,6 +184,25 @@ public class ProjectController {
             return ResponseEntity.ok(updatedProject);
         } catch (UserAlreadyInProjectException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        } catch (Exception e) {
+            logger.info("Error bro");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/{projectId}/status")
+    @ApiOperation(value = "Get the status of a project")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully retrieved the project status"),
+            @ApiResponse(code = 404, message = "Project not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<Status> getStatusFromProject(@PathVariable Long projectId) {
+        try {
+            Project project = projectService.findById(projectId);
+            return ResponseEntity.ok(project.getStatus());
+        } catch (ProjectNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
