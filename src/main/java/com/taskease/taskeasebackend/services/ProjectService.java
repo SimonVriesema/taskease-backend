@@ -3,6 +3,8 @@ package com.taskease.taskeasebackend.services;
 import com.taskease.taskeasebackend.dto.response.UserDTO;
 import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
 import com.taskease.taskeasebackend.exceptions.ProjectSaveException;
+import com.taskease.taskeasebackend.exceptions.UserAlreadyInProjectException;
+import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
 import com.taskease.taskeasebackend.models.Project;
 import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.repositories.ProjectRepository;
@@ -119,18 +121,19 @@ public class ProjectService {
     @Transactional
     public Project addUserToProject(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-
-        if (!project.getUsers().contains(user)) {
-            project.getUsers().add(user);
-            user.getProjects().add(project);
-
-            projectRepository.save(project);
-            userRepository.save(user);
+        if (project.getUsers().contains(user)) {
+            throw new UserAlreadyInProjectException("User is already in the project");
         }
+
+        project.getUsers().add(user);
+        user.getProjects().add(project);
+
+        projectRepository.save(project);
+        userRepository.save(user);
 
         return project;
     }
