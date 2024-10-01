@@ -137,4 +137,24 @@ public class ProjectService {
 
         return project;
     }
+
+    @Transactional
+    public Project removeUserFromProject(Long projectId, Long userId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        if (!project.getUsers().contains(user)) {
+            throw new UserNotFoundException("User is not part of the project");
+        }
+
+        project.getUsers().remove(user);
+        user.getProjects().remove(project);
+
+        projectRepository.save(project);
+        userRepository.save(user);
+
+        return project;
+    }
 }

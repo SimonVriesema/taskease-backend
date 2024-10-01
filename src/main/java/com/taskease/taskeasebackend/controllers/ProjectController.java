@@ -215,6 +215,25 @@ public class ProjectController {
         }
     }
 
+    @DeleteMapping("/{projectId}/{userId}")
+    @ApiOperation(value = "Remove a user from a project")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully removed the user from the project"),
+            @ApiResponse(code = 404, message = "Project or user not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<ProjectDTO> removeUserFromProject(@PathVariable Long projectId, @PathVariable Long userId) {
+        try {
+            Project project = projectService.removeUserFromProject(projectId, userId);
+            ProjectDTO projectDTO = DTOConvertor.convertToDTO(project);
+            return ResponseEntity.ok(projectDTO);
+        } catch (ProjectNotFoundException | UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     @GetMapping("/{projectId}/users")
     @ApiOperation(value = "Get all users from a project")
     @ApiResponses(value = {
