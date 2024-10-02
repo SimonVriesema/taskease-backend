@@ -1,8 +1,10 @@
 package com.taskease.taskeasebackend.utils;
 
 import com.taskease.taskeasebackend.dto.response.ProjectDTO;
+import com.taskease.taskeasebackend.dto.response.TaskDTO;
 import com.taskease.taskeasebackend.dto.response.UserDTO;
 import com.taskease.taskeasebackend.models.Project;
+import com.taskease.taskeasebackend.models.Task;
 import com.taskease.taskeasebackend.models.User;
 
 import java.util.stream.Collectors;
@@ -28,5 +30,32 @@ public class DTOConvertor {
         userDTO.setFirstName(user.getFirstName());
         userDTO.setLastName(user.getLastName());
         return userDTO;
+    }
+
+    public static TaskDTO convertToDTO(Task task) {
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setId(task.getId());
+        taskDTO.setTitle(task.getTitle());
+        taskDTO.setDescription(task.getDescription());
+        taskDTO.setStatus(task.getStatus());
+        taskDTO.setPriority(task.getPriority());
+        taskDTO.setDueDate(task.getDueDate());
+        taskDTO.setCreatedDate(task.getCreatedDate());
+
+        TaskDTO.ProjectInfo projectInfo = new TaskDTO.ProjectInfo();
+        if (task.getProject() != null) {
+            projectInfo.setProjectId(task.getProject().getId());
+            projectInfo.setProjectTitle(task.getProject().getTitle());
+        }
+        taskDTO.setProjectInfo(projectInfo);
+
+        TaskDTO.UserInfo userInfo = new TaskDTO.UserInfo();
+        if (task.getAssignedUser() != null) {
+            userInfo.setAssignedUserId(task.getAssignedUser().getId());
+            userInfo.setAssignedUserName(task.getAssignedUser().getUsername());
+        }
+        taskDTO.setUserInfo(userInfo);
+
+        return taskDTO;
     }
 }

@@ -1,12 +1,15 @@
 package com.taskease.taskeasebackend.controllers;
 
 import com.taskease.taskeasebackend.dto.request.CreateTaskForProjectRequest;
+import com.taskease.taskeasebackend.dto.response.TaskDTO;
+import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
 import com.taskease.taskeasebackend.models.Project;
 import com.taskease.taskeasebackend.models.Task;
 import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.services.ProjectService;
 import com.taskease.taskeasebackend.services.TaskService;
 import com.taskease.taskeasebackend.services.UserService;
+import com.taskease.taskeasebackend.utils.DTOConvertor;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -23,13 +26,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.taskease.taskeasebackend.utils.DTOConvertor.convertToDTO;
 
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
     private final TaskService taskService;
     private final UserService userService;
-    private ProjectService projectService;
+    private final ProjectService projectService;
 
     @Autowired
     public TaskController(TaskService taskService, UserService userService, ProjectService projectService) {
@@ -59,30 +65,16 @@ public class TaskController {
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Successfully created the task"),
             @ApiResponse(code = 400, message = "Invalid input data"),
+            @ApiResponse(code = 404, message = "User not found"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
-    public ResponseEntity<Task> createTaskForProject(@PathVariable Long projectId, @RequestBody CreateTaskForProjectRequest createTaskRequest) {
+    public ResponseEntity<TaskDTO> createTaskForProject(@PathVariable Long projectId, @RequestBody CreateTaskForProjectRequest createTaskRequest) {
         try {
-            Project project = projectService.findById(projectId);
-            if (project == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-            }
-
-            Task task = new Task();
-            task.setTitle(createTaskRequest.getTitle());
-            task.setDescription(createTaskRequest.getDescription());
-            task.setStatus(createTaskRequest.getStatus());
-            task.setPriority(createTaskRequest.getPriority());
-            task.setDueDate(createTaskRequest.getDueDate());
-            task.setProject(project);
-
-            if (createTaskRequest.getAssignedUserId() != null) {
-                User assignedUser = userService.getUserById(createTaskRequest.getAssignedUserId());
-                task.setAssignedUser(assignedUser);
-            }
-
-            Task createdTask = taskService.createTask(task);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+            Task createdTask = taskService.createTaskForProject(projectId, createTaskRequest);
+            TaskDTO taskDTO = convertToDTO(createdTask);
+            return ResponseEntity.status(HttpStatus.CREATED).body(taskDTO);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -111,13 +103,14 @@ public class TaskController {
             @ApiResponse(code = 400, message = "Invalid input data"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
-    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task task) {
+    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody Task task) {
         try {
             Task existingTask = taskService.getTaskById(id);
             if (existingTask != null) {
                 task.setId(id);
                 Task updatedTask = taskService.updateTask(task);
-                return ResponseEntity.status(HttpStatus.OK).body(updatedTask);
+                TaskDTO taskDTO = convertToDTO(updatedTask);
+                return ResponseEntity.status(HttpStatus.OK).body(taskDTO);
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
@@ -133,12 +126,38 @@ public class TaskController {
             @ApiResponse(code = 404, message = "The user you were trying to reach is not found"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
-    public ResponseEntity<List<Task>> getTasksByUserId(@PathVariable Long id) {
+    public ResponseEntity<List<TaskDTO>> getTasksByUserId(@PathVariable Long id) {
         try {
             User user = userService.getUserById(id);
             if (user != null) {
                 List<Task> tasks = taskService.getTasksByAssignedUser(user);
-                return ResponseEntity.ok(tasks);
+                List<TaskDTO> taskDTOs = tasks.stream()
+                        .map(DTOConvertor::convertToDTO)
+                        .collect(Collectors.toList());
+                return ResponseEntity.ok(taskDTOs);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/project/{id}")
+    @ApiOperation(value = "Get tasks from a project by project ID", notes = "Retrieve tasks associated with a project by providing the project ID")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully retrieved the tasks"),
+            @ApiResponse(code = 404, message = "Project not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<List<TaskDTO>> getTasksFromProject(@PathVariable Long id) {
+        try {
+            Project project = projectService.findById(id);
+            if (project != null) {
+                List<TaskDTO> taskDTOs = project.getTasks().stream()
+                        .map(DTOConvertor::convertToDTO)
+                        .collect(Collectors.toList());
+                return ResponseEntity.ok(taskDTOs);
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
