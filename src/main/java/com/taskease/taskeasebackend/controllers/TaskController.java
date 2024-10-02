@@ -2,11 +2,10 @@ package com.taskease.taskeasebackend.controllers;
 
 import com.taskease.taskeasebackend.dto.request.CreateTaskForProjectRequest;
 import com.taskease.taskeasebackend.dto.response.TaskDTO;
+import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
 import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
-import com.taskease.taskeasebackend.models.Project;
 import com.taskease.taskeasebackend.models.Task;
 import com.taskease.taskeasebackend.models.User;
-import com.taskease.taskeasebackend.services.ProjectService;
 import com.taskease.taskeasebackend.services.TaskService;
 import com.taskease.taskeasebackend.services.UserService;
 import com.taskease.taskeasebackend.utils.DTOConvertor;
@@ -16,32 +15,21 @@ import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.taskease.taskeasebackend.utils.DTOConvertor.convertToDTO;
 
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
     private final TaskService taskService;
     private final UserService userService;
-    private final ProjectService projectService;
 
     @Autowired
-    public TaskController(TaskService taskService, UserService userService, ProjectService projectService) {
+    public TaskController(TaskService taskService, UserService userService) {
         this.taskService = taskService;
         this.userService = userService;
-        this.projectService = projectService;
     }
 
     @PostMapping
@@ -65,15 +53,17 @@ public class TaskController {
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Successfully created the task"),
             @ApiResponse(code = 400, message = "Invalid input data"),
-            @ApiResponse(code = 404, message = "User not found"),
+            @ApiResponse(code = 404, message = "User or project not found"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
     public ResponseEntity<TaskDTO> createTaskForProject(@PathVariable Long projectId, @RequestBody CreateTaskForProjectRequest createTaskRequest) {
         try {
             Task createdTask = taskService.createTaskForProject(projectId, createTaskRequest);
-            TaskDTO taskDTO = convertToDTO(createdTask);
+            TaskDTO taskDTO = DTOConvertor.convertToDTO(createdTask);
             return ResponseEntity.status(HttpStatus.CREATED).body(taskDTO);
         } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (ProjectNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -87,10 +77,10 @@ public class TaskController {
             @ApiResponse(code = 404, message = "The task you were trying to delete is not found"),
     })
     public ResponseEntity<Void> deleteTaskById(@PathVariable Long id) {
-        if (taskService.getTaskById(id) != null) {
+        try {
             taskService.deleteTaskById(id);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } else {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
@@ -105,15 +95,10 @@ public class TaskController {
     })
     public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody Task task) {
         try {
-            Task existingTask = taskService.getTaskById(id);
-            if (existingTask != null) {
-                task.setId(id);
-                Task updatedTask = taskService.updateTask(task);
-                TaskDTO taskDTO = convertToDTO(updatedTask);
-                return ResponseEntity.status(HttpStatus.OK).body(taskDTO);
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
+            task.setId(id);
+            Task updatedTask = taskService.updateTask(task);
+            TaskDTO taskDTO = DTOConvertor.convertToDTO(updatedTask);
+            return ResponseEntity.status(HttpStatus.OK).body(taskDTO);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -129,15 +114,14 @@ public class TaskController {
     public ResponseEntity<List<TaskDTO>> getTasksByUserId(@PathVariable Long id) {
         try {
             User user = userService.getUserById(id);
-            if (user != null) {
-                List<Task> tasks = taskService.getTasksByAssignedUser(user);
-                List<TaskDTO> taskDTOs = tasks.stream()
-                        .map(DTOConvertor::convertToDTO)
-                        .collect(Collectors.toList());
-                return ResponseEntity.ok(taskDTOs);
-            } else {
+            if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
+            List<Task> tasks = taskService.getTasksByAssignedUser(user);
+            List<TaskDTO> taskDTOs = tasks.stream()
+                    .map(DTOConvertor::convertToDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(taskDTOs);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -152,15 +136,11 @@ public class TaskController {
     })
     public ResponseEntity<List<TaskDTO>> getTasksFromProject(@PathVariable Long id) {
         try {
-            Project project = projectService.findById(id);
-            if (project != null) {
-                List<TaskDTO> taskDTOs = project.getTasks().stream()
-                        .map(DTOConvertor::convertToDTO)
-                        .collect(Collectors.toList());
-                return ResponseEntity.ok(taskDTOs);
-            } else {
+            List<TaskDTO> taskDTOs = taskService.getTasksFromProject(id);
+            if (taskDTOs.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
+            return ResponseEntity.ok(taskDTOs);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
