@@ -3,6 +3,7 @@ package com.taskease.taskeasebackend.services;
 import com.taskease.taskeasebackend.dto.request.CreateTaskForProjectRequest;
 import com.taskease.taskeasebackend.dto.response.TaskDTO;
 import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
+import com.taskease.taskeasebackend.exceptions.TaskNotFoundException;
 import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
 import com.taskease.taskeasebackend.models.Project;
 import com.taskease.taskeasebackend.models.Task;
@@ -75,6 +76,9 @@ public class TaskService {
     }
 
     public void deleteTaskById(Long id) {
+        if (!taskRepository.existsById(id)) {
+            throw new TaskNotFoundException("Task not found");
+        }
         taskRepository.deleteById(id);
     }
 

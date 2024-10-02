@@ -3,6 +3,7 @@ package com.taskease.taskeasebackend.controllers;
 import com.taskease.taskeasebackend.dto.request.CreateTaskForProjectRequest;
 import com.taskease.taskeasebackend.dto.response.TaskDTO;
 import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
+import com.taskease.taskeasebackend.exceptions.TaskNotFoundException;
 import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
 import com.taskease.taskeasebackend.models.Task;
 import com.taskease.taskeasebackend.models.User;
@@ -80,7 +81,7 @@ public class TaskController {
         try {
             taskService.deleteTaskById(id);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } catch (Exception e) {
+        } catch (TaskNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
