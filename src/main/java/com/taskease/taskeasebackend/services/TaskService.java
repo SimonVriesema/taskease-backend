@@ -2,6 +2,7 @@ package com.taskease.taskeasebackend.services;
 
 import com.taskease.taskeasebackend.dto.request.CreateTaskForProjectRequest;
 import com.taskease.taskeasebackend.dto.response.TaskDTO;
+import com.taskease.taskeasebackend.exceptions.InvalidInputDataException;
 import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
 import com.taskease.taskeasebackend.exceptions.TaskNotFoundException;
 import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
@@ -40,39 +41,51 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public Task createTaskForProject(Long projectId, CreateTaskForProjectRequest request) {
-        Optional<Project> projectOptional = projectRepository.findById(projectId);
-        if (projectOptional.isEmpty()) {
-            throw new ProjectNotFoundException("Project not found");
+    public TaskDTO createTaskForProject(Long projectId, CreateTaskForProjectRequest createTaskRequest) throws InvalidInputDataException, UserNotFoundException, ProjectNotFoundException {
+        validateCreateTaskRequest(createTaskRequest);
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+
+        Task task = buildTaskFromRequest(createTaskRequest, project);
+
+        return DTOConvertor.convertToDTO(task);
+    }
+
+    private void validateCreateTaskRequest(CreateTaskForProjectRequest createTaskRequest) throws InvalidInputDataException {
+        if (createTaskRequest == null || createTaskRequest.getTitle() == null || createTaskRequest.getTitle().isEmpty()) {
+            throw new InvalidInputDataException("Task title is required");
         }
-        Project project = projectOptional.get();
+    }
+
+    private Task buildTaskFromRequest(CreateTaskForProjectRequest createTaskRequest, Project project) throws UserNotFoundException {
         Task task = new Task();
-        task.setTitle(request.getTitle());
-        task.setDescription(request.getDescription());
-        task.setStatus(request.getStatus());
-        task.setPriority(request.getPriority());
-        task.setDueDate(request.getDueDate());
+        task.setTitle(createTaskRequest.getTitle());
+        task.setDescription(createTaskRequest.getDescription());
+        task.setStatus(createTaskRequest.getStatus());
+        task.setPriority(createTaskRequest.getPriority());
+        task.setDueDate(createTaskRequest.getDueDate());
         task.setProject(project);
-        if (request.getAssignedUserId() != null) {
-            Optional<User> assignedUserOptional = userRepository.findById(request.getAssignedUserId());
-            if (assignedUserOptional.isEmpty()) {
-                throw new UserNotFoundException("User not found");
-            }
-            task.setAssignedUser(assignedUserOptional.get());
+
+        if (createTaskRequest.getAssignedUserId() != null) {
+            User assignedUser = userRepository.findById(createTaskRequest.getAssignedUserId())
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
+            task.setAssignedUser(assignedUser);
         }
-        return taskRepository.save(task);
+
+        return task;
     }
 
-    public Task updateTask(Task task) {
-        if (task.getAssignedUser() != null && task.getAssignedUser().getId() != null) {
-            User user = userRepository.findById(task.getAssignedUser().getId()).orElse(null);
-            task.setAssignedUser(user);
+    public TaskDTO updateTask(Long id, Task task) throws InvalidInputDataException, TaskNotFoundException {
+        if (task == null || task.getTitle() == null || task.getTitle().isEmpty()) {
+            throw new InvalidInputDataException("Task title is required");
         }
-        return taskRepository.save(task);
-    }
-
-    public Task getTaskById(Long id) {
-        return taskRepository.findById(id).orElse(null);
+        if (!taskRepository.existsById(id)) {
+            throw new TaskNotFoundException("Task not found");
+        }
+        task.setId(id);
+        Task updatedTask = taskRepository.save(task);
+        return DTOConvertor.convertToDTO(updatedTask);
     }
 
     public void deleteTaskById(Long id) {
@@ -82,15 +95,16 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    public List<Task> getTasksByAssignedUser(User assignedUser) {
-        return taskRepository.findByAssignedUser(assignedUser);
+    public List<TaskDTO> getTasksByUserId(Long id) throws UserNotFoundException {
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
+        List<Task> tasks = taskRepository.findByAssignedUser(user);
+        return tasks.stream().map(DTOConvertor::convertToDTO).collect(Collectors.toList());
     }
 
-    public List<TaskDTO> getTasksFromProject(Long projectId) throws Exception {
-        Project project = projectRepository.findById(projectId).orElse(null);
-        if (project == null) {
-            throw new Exception("Project not found");
-        }
+    public List<TaskDTO> getTasksFromProject(Long projectId) throws ProjectNotFoundException {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+
         return project.getTasks().stream()
                 .map(DTOConvertor::convertToDTO)
                 .collect(Collectors.toList());
