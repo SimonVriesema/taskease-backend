@@ -2,6 +2,7 @@ package com.taskease.taskeasebackend.controllers;
 
 import com.taskease.taskeasebackend.dto.request.CreateTaskForProjectRequest;
 import com.taskease.taskeasebackend.dto.response.TaskDTO;
+import com.taskease.taskeasebackend.exceptions.InvalidInputDataException;
 import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
 import com.taskease.taskeasebackend.exceptions.TaskNotFoundException;
 import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
@@ -42,8 +43,13 @@ public class TaskController {
     })
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
         try {
+            if (task == null || task.getTitle() == null || task.getTitle().isEmpty()) {
+                throw new InvalidInputDataException("Task title is required");
+            }
             Task createdTask = taskService.createTask(task);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+        } catch (InvalidInputDataException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -59,12 +65,15 @@ public class TaskController {
     })
     public ResponseEntity<TaskDTO> createTaskForProject(@PathVariable Long projectId, @RequestBody CreateTaskForProjectRequest createTaskRequest) {
         try {
+            if (createTaskRequest == null || createTaskRequest.getTitle() == null || createTaskRequest.getTitle().isEmpty()) {
+                throw new InvalidInputDataException("Task title is required");
+            }
             Task createdTask = taskService.createTaskForProject(projectId, createTaskRequest);
             TaskDTO taskDTO = DTOConvertor.convertToDTO(createdTask);
             return ResponseEntity.status(HttpStatus.CREATED).body(taskDTO);
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        } catch (ProjectNotFoundException e) {
+        } catch (InvalidInputDataException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (UserNotFoundException | ProjectNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -96,10 +105,17 @@ public class TaskController {
     })
     public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody Task task) {
         try {
+            if (task == null || task.getTitle() == null || task.getTitle().isEmpty()) {
+                throw new InvalidInputDataException("Task title is required");
+            }
             task.setId(id);
             Task updatedTask = taskService.updateTask(task);
             TaskDTO taskDTO = DTOConvertor.convertToDTO(updatedTask);
             return ResponseEntity.status(HttpStatus.OK).body(taskDTO);
+        } catch (InvalidInputDataException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (TaskNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -114,7 +130,7 @@ public class TaskController {
     })
     public ResponseEntity<List<TaskDTO>> getTasksByUserId(@PathVariable Long id) {
         try {
-            User user = userService.getUserById(id);
+            User user = userService.getUserEntityById(id);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
@@ -123,6 +139,8 @@ public class TaskController {
                     .map(DTOConvertor::convertToDTO)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(taskDTOs);
+        } catch (TaskNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -142,6 +160,8 @@ public class TaskController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
             return ResponseEntity.ok(taskDTOs);
+        } catch (ProjectNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

@@ -4,6 +4,7 @@ import com.taskease.taskeasebackend.dto.request.CreateProjectRequest;
 import com.taskease.taskeasebackend.dto.response.ProjectDTO;
 import com.taskease.taskeasebackend.dto.response.UserDTO;
 import com.taskease.taskeasebackend.enums.Status;
+import com.taskease.taskeasebackend.exceptions.ProjectLeaderNotFoundException;
 import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
 import com.taskease.taskeasebackend.exceptions.UserAlreadyInProjectException;
 import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
@@ -11,8 +12,7 @@ import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.services.UserService;
 import com.taskease.taskeasebackend.utils.DTOConvertor;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 import com.taskease.taskeasebackend.models.Project;
 import com.taskease.taskeasebackend.services.ProjectService;
@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/projects")
 public class ProjectController {
-    private static final Logger logger = LoggerFactory.getLogger(ProjectController.class);
     private final ProjectService projectService;
     private final UserService userService;
 
@@ -57,9 +56,8 @@ public class ProjectController {
     public ResponseEntity<List<ProjectDTO>> getProjects() {
         try {
             List<Project> projects = projectService.getAllProjects();
-            List<ProjectDTO> projectDTOs = projects.stream()
-                    .map(DTOConvertor::convertToDTO)
-                    .collect(Collectors.toList());
+            List<ProjectDTO> projectDTOs =
+                    projects.stream().map(DTOConvertor::convertToDTO).collect(Collectors.toList());
             return ResponseEntity.ok(projectDTOs);
         } catch (ProjectNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -94,11 +92,10 @@ public class ProjectController {
     })
     public ResponseEntity<ProjectDTO> createProject(@RequestBody @Valid CreateProjectRequest createProjectRequest) {
         try {
-            User projectLeader = userService.getUserById(createProjectRequest.getProjectLeaderId());
+            User projectLeader = userService.getUserEntityById(createProjectRequest.getProjectLeaderId());
             if (projectLeader == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
-
             Project project = new Project();
             project.setTitle(createProjectRequest.getTitle());
             project.setDescription(createProjectRequest.getDescription());
@@ -108,6 +105,8 @@ public class ProjectController {
             Project createdProject = projectService.saveProject(project);
             ProjectDTO projectDTO = DTOConvertor.convertToDTO(createdProject);
             return ResponseEntity.status(HttpStatus.CREATED).body(projectDTO);
+        } catch (ProjectLeaderNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -133,8 +132,7 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     @ApiOperation(value = "Update project by ID", notes = "Update project by providing its ID")
-    @ApiResponses(value = {
-            @ApiResponse(code = 204, message = "Successfully updated the project"),
+    @ApiResponses(value = {@ApiResponse(code = 204, message = "Successfully updated the project"),
             @ApiResponse(code = 404, message = "The project you were trying to update is not found"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
@@ -154,7 +152,8 @@ public class ProjectController {
     }
 
     @GetMapping("/user/{userId}")
-    @ApiOperation(value = "Get projects by user ID", notes = "Retrieve projects where the user is either in the users list or is the project leader")
+    @ApiOperation(value = "Get projects by user ID", notes = "Retrieve projects where the user is either in the " +
+            "users" + " list" + " or is the project leader")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully retrieved the projects"),
             @ApiResponse(code = 404, message = "Projects not found"),
@@ -163,9 +162,8 @@ public class ProjectController {
     public ResponseEntity<List<ProjectDTO>> getProjectsByUserId(@PathVariable Long userId) {
         try {
             List<Project> projects = projectService.getProjectsByUserId(userId);
-            List<ProjectDTO> projectDTOs = projects.stream()
-                    .map(DTOConvertor::convertToDTO)
-                    .collect(Collectors.toList());
+            List<ProjectDTO> projectDTOs =
+                    projects.stream().map(DTOConvertor::convertToDTO).collect(Collectors.toList());
             return ResponseEntity.status(HttpStatus.OK).body(projectDTOs);
         } catch (ProjectNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

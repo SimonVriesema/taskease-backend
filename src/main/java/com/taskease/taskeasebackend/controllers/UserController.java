@@ -1,26 +1,18 @@
 package com.taskease.taskeasebackend.controllers;
 
 import com.taskease.taskeasebackend.dto.response.UserDTO;
+import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
 import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.services.UserService;
-import com.taskease.taskeasebackend.utils.DTOConvertor;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/users")
@@ -36,11 +28,15 @@ public class UserController {
     @ApiOperation(value = "Create a user and store in the database")
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Successfully created the user"),
+            @ApiResponse(code = 500, message = "Internal server error")
     })
     public ResponseEntity<UserDTO> createUser(@RequestBody User user) {
-        User createdUser = userService.createUser(user);
-        UserDTO userDTO = DTOConvertor.convertToDTO(createdUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userDTO);
+        try {
+            UserDTO userDTO = userService.createUser(user);
+            return ResponseEntity.status(HttpStatus.CREATED).body(userDTO);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping
@@ -51,10 +47,7 @@ public class UserController {
     })
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         try {
-            List<User> users = userService.getAllUsers();
-            List<UserDTO> userDTOs = users.stream()
-                    .map(DTOConvertor::convertToDTO)
-                    .collect(Collectors.toList());
+            List<UserDTO> userDTOs = userService.getAllUsers();
             return ResponseEntity.ok(userDTOs);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -66,14 +59,16 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully retrieved the user"),
             @ApiResponse(code = 404, message = "The user you were trying to reach is not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
     })
     public ResponseEntity<UserDTO> findUserById(@PathVariable Long id) {
-        User user = userService.getUserById(id);
-        if (user != null) {
-            UserDTO userDTO = DTOConvertor.convertToDTO(user);
+        try {
+            UserDTO userDTO = userService.getUserById(id);
             return ResponseEntity.ok(userDTO);
-        } else {
-            return ResponseEntity.notFound().build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -82,10 +77,17 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(code = 204, message = "Successfully deleted the user"),
             @ApiResponse(code = 404, message = "The user you were trying to delete is not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
     })
     public ResponseEntity<Void> deleteUserById(@PathVariable Long id) {
-        userService.deleteUserById(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        try {
+            userService.deleteUserById(id);
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/email/{email}")
@@ -93,14 +95,16 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully retrieved the user"),
             @ApiResponse(code = 404, message = "The user you were trying to reach is not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
     })
     public ResponseEntity<UserDTO> findUserByEmail(@PathVariable String email) {
-        User user = userService.getUserByEmail(email);
-        if (user != null) {
-            UserDTO userDTO = DTOConvertor.convertToDTO(user);
+        try {
+            UserDTO userDTO = userService.getUserByEmail(email);
             return ResponseEntity.ok(userDTO);
-        } else {
-            return ResponseEntity.notFound().build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -109,26 +113,17 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully retrieved the user"),
             @ApiResponse(code = 404, message = "The user you were trying to reach is not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
     })
     public ResponseEntity<UserDTO> findUserByUsername(@PathVariable String username) {
-        User user = userService.getUserByUsername(username);
-        if (user != null) {
-            UserDTO userDTO = DTOConvertor.convertToDTO(user);
+        try {
+            UserDTO userDTO = userService.getUserByUsername(username);
             return ResponseEntity.ok(userDTO);
-        } else {
-            return ResponseEntity.notFound().build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-
-    @GetMapping("/exists/email/{email}")
-    @ApiOperation(value = "Check if user exists by email", notes = "Check if a user exists by providing their email")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Successfully checked the user existence"),
-            @ApiResponse(code = 404, message = "The user you were trying to check is not found"),
-    })
-    public ResponseEntity<Boolean> doesUserExistByEmail(@PathVariable String email) {
-        User user = userService.getUserByEmail(email);
-        return ResponseEntity.ok(user != null);
     }
 
     @PutMapping("/{id}")
@@ -136,14 +131,16 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully updated the user"),
             @ApiResponse(code = 404, message = "The user you were trying to update is not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
     })
     public ResponseEntity<UserDTO> updateUserById(@PathVariable Long id, @RequestBody User user) {
-        User updatedUser = userService.updateUser(id, user);
-        if (updatedUser != null) {
-            UserDTO userDTO = DTOConvertor.convertToDTO(updatedUser);
+        try {
+            UserDTO userDTO = userService.updateUser(id, user);
             return ResponseEntity.ok(userDTO);
-        } else {
-            return ResponseEntity.notFound().build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }
