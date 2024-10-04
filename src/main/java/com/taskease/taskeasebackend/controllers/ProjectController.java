@@ -182,9 +182,8 @@ public class ProjectController {
     })
     public ResponseEntity<ProjectDTO> addUserToProject(@PathVariable Long projectId, @PathVariable Long userId) {
         try {
-            Project updatedProject = projectService.addUserToProject(projectId, userId);
-            ProjectDTO projectDTO = DTOConvertor.convertToDTO(updatedProject);
-            return ResponseEntity.ok(projectDTO);
+            ProjectDTO updatedProject = projectService.addUserToProject(projectId, userId);
+            return ResponseEntity.ok(updatedProject);
         } catch (UserAlreadyInProjectException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         } catch (ProjectNotFoundException | UserNotFoundException e) {
@@ -221,9 +220,8 @@ public class ProjectController {
     })
     public ResponseEntity<ProjectDTO> removeUserFromProject(@PathVariable Long projectId, @PathVariable Long userId) {
         try {
-            Project project = projectService.removeUserFromProject(projectId, userId);
-            ProjectDTO projectDTO = DTOConvertor.convertToDTO(project);
-            return ResponseEntity.ok(projectDTO);
+            ProjectDTO project = projectService.removeUserFromProject(projectId, userId);
+            return ResponseEntity.ok(project);
         } catch (ProjectNotFoundException | UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {

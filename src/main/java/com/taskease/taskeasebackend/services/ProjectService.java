@@ -1,16 +1,15 @@
 package com.taskease.taskeasebackend.services;
 
+import com.taskease.taskeasebackend.dto.request.CreateProjectRequest;
+import com.taskease.taskeasebackend.dto.response.ProjectDTO;
 import com.taskease.taskeasebackend.dto.response.UserDTO;
-import com.taskease.taskeasebackend.exceptions.ProjectNotFoundException;
-import com.taskease.taskeasebackend.exceptions.ProjectSaveException;
-import com.taskease.taskeasebackend.exceptions.UserAlreadyInProjectException;
-import com.taskease.taskeasebackend.exceptions.UserNotFoundException;
+import com.taskease.taskeasebackend.enums.Status;
+import com.taskease.taskeasebackend.exceptions.*;
 import com.taskease.taskeasebackend.models.Project;
 import com.taskease.taskeasebackend.models.User;
 import com.taskease.taskeasebackend.repositories.ProjectRepository;
 import com.taskease.taskeasebackend.repositories.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.taskease.taskeasebackend.utils.DTOConvertor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,11 +21,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
-    private static final Logger logger = LoggerFactory.getLogger(ProjectService.class);
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
-
 
     public ProjectService(ProjectRepository projectRepository, UserRepository userRepository) {
         this.projectRepository = projectRepository;
@@ -38,10 +35,7 @@ public class ProjectService {
             project.setCreatedDate(LocalDate.from(LocalDateTime.now()));
         }
 
-        if (project.getProjectLeader() != null) {
-            Optional<User> userOpt = userRepository.findById(project.getProjectLeader().getId());
-            userOpt.ifPresent(project::setProjectLeader);
-        }
+        project.setProjectLeader(validateUser(project.getProjectLeader().getId()));
 
         try {
             return projectRepository.save(project);
@@ -51,35 +45,27 @@ public class ProjectService {
     }
 
     public void deleteProjectById(Long projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new ProjectNotFoundException(String.format("Project with ID %d not found", projectId));
-        }
+        validateProjectExists(projectId);
         projectRepository.deleteById(projectId);
     }
 
     public boolean doesProjectExist(Long projectId) {
-        if (projectId == null) {
-            throw new IllegalArgumentException("Project ID cannot be null");
-        }
+        validateProjectId(projectId);
         return projectRepository.existsById(projectId);
     }
 
     public Project findById(Long projectId) {
-        if (projectId == null) {
-            throw new IllegalArgumentException("Project ID cannot be null");
-        }
+        validateProjectId(projectId);
         return projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(String.format("Project with ID %d not found", projectId)));
     }
 
     public List<Project> getAllProjects() {
         List<Project> projects = projectRepository.findAll();
-
         if (projects.isEmpty()) {
             throw new ProjectNotFoundException("No projects found");
         }
-
-        return  projects;
+        return projects;
     }
 
     public List<Project> getProjectsByUserId(Long userId) {
@@ -87,43 +73,38 @@ public class ProjectService {
         if (projects.isEmpty()) {
             throw new ProjectNotFoundException(String.format("No projects found for user ID %d", userId));
         }
-
         projects.forEach(project -> project.getUsers().size());
         return projects;
     }
 
     public Project updateProject(Long id, Project project) {
-        if (projectRepository.existsById(id)) {
-            project.setId(id);
-            return projectRepository.save(project);
-        } else {
-            return null;
-        }
-    }
-
-    public List<UserDTO> getUsersByProjectId(Long projectId) {
-        Project project = findById(projectId);
-        List<User> users = project.getUsers();
-
-        logger.info("Found {} users for project ID {}", users.size(), projectId);
-
-        return users.stream().map(user -> {
-            UserDTO userDTO = new UserDTO();
-            userDTO.setId(user.getId());
-            userDTO.setEmail(user.getEmail());
-            userDTO.setUsername(user.getUsername());
-            userDTO.setFirstName(user.getFirstName());
-            userDTO.setLastName(user.getLastName());
-            return userDTO;
-        }).collect(Collectors.toList());
+        validateProjectExists(id);
+        project.setId(id);
+        return projectRepository.save(project);
     }
 
     @Transactional
-    public Project addUserToProject(Long projectId, Long userId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+    public Project removeUserFromProjectInternal(Long projectId, Long userId) {
+        Project project = validateProjectExists(projectId);
+        User user = validateUser(userId);
+
+        if (!project.getUsers().contains(user)) {
+            throw new UserNotFoundException("User is not part of the project");
+        }
+
+        project.getUsers().remove(user);
+        user.getProjects().remove(project);
+
+        projectRepository.save(project);
+        userRepository.save(user);
+
+        return project;
+    }
+
+    @Transactional
+    public Project addUserToProjectInternal(Long projectId, Long userId) {
+        Project project = validateProjectExists(projectId);
+        User user = validateUser(userId);
 
         if (project.getUsers().contains(user)) {
             throw new UserAlreadyInProjectException("User is already in the project");
@@ -138,23 +119,60 @@ public class ProjectService {
         return project;
     }
 
-    @Transactional
-    public Project removeUserFromProject(Long projectId, Long userId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+    public List<ProjectDTO> getAllProjectDTOs() {
+        return getAllProjects().stream().map(DTOConvertor::convertToDTO).collect(Collectors.toList());
+    }
 
-        if (!project.getUsers().contains(user)) {
-            throw new UserNotFoundException("User is not part of the project");
+    public ProjectDTO getProjectDTOById(Long id) {
+        return DTOConvertor.convertToDTO(findById(id));
+    }
+
+    public ProjectDTO createProject(CreateProjectRequest createProjectRequest) {
+        User projectLeader = validateUser(createProjectRequest.getProjectLeaderId());
+
+        Project project = new Project();
+        project.setTitle(createProjectRequest.getTitle());
+        project.setDescription(createProjectRequest.getDescription());
+        project.setProjectLeader(projectLeader);
+        project.setStatus(createProjectRequest.getStatus());
+        project.getUsers().add(projectLeader);
+
+        return DTOConvertor.convertToDTO(saveProject(project));
+    }
+
+    public Status getProjectStatus(Long projectId) {
+        return findById(projectId).getStatus();
+    }
+
+    public List<ProjectDTO> getProjectDTOsByUserId(Long userId) {
+        return getProjectsByUserId(userId).stream().map(DTOConvertor::convertToDTO).collect(Collectors.toList());
+    }
+
+    public ProjectDTO addUserToProject(Long projectId, Long userId) {
+        return DTOConvertor.convertToDTO(addUserToProjectInternal(projectId, userId));
+    }
+
+    public ProjectDTO removeUserFromProject(Long projectId, Long userId) {
+        return DTOConvertor.convertToDTO(removeUserFromProjectInternal(projectId, userId));
+    }
+
+    public List<UserDTO> getUsersByProjectId(Long projectId) {
+        return findById(projectId).getUsers().stream().map(DTOConvertor::convertToDTO).collect(Collectors.toList());
+    }
+
+    private void validateProjectId(Long projectId) {
+        if (projectId == null) {
+            throw new IllegalArgumentException("Project ID cannot be null");
         }
+    }
 
-        project.getUsers().remove(user);
-        user.getProjects().remove(project);
+    private Project validateProjectExists(Long projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(String.format("Project with ID %d not found", projectId)));
+    }
 
-        projectRepository.save(project);
-        userRepository.save(user);
-
-        return project;
+    private User validateUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(String.format("User with ID %d not found", userId)));
     }
 }
