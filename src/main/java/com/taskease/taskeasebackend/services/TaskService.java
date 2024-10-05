@@ -15,9 +15,9 @@ import com.taskease.taskeasebackend.repositories.UserRepository;
 import com.taskease.taskeasebackend.utils.DTOConvertor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,7 +48,7 @@ public class TaskService {
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
 
         Task task = buildTaskFromRequest(createTaskRequest, project);
-
+        Task savedTask = taskRepository.save(task);
         return DTOConvertor.convertToDTO(task);
     }
 
