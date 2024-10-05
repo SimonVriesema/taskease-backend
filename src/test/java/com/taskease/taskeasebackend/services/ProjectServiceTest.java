@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.List;
 import java.util.Collections;
 
-public class ProjectServiceTest {
+class ProjectServiceTest {
 
     @Mock
     private ProjectRepository projectRepository;
@@ -29,12 +29,12 @@ public class ProjectServiceTest {
     private ProjectService projectService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testSaveProject() {
+    void testSaveProject() {
         Project project = new Project();
         User user = new User();
         user.setId(1L);
@@ -50,7 +50,7 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testDeleteProjectById() {
+    void testDeleteProjectById() {
         Project project = new Project();
         project.setId(1L);
 
@@ -64,7 +64,7 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testDoesProjectExist() {
+    void testDoesProjectExist() {
         when(projectRepository.existsById(1L)).thenReturn(true);
 
         boolean exists = projectService.doesProjectExist(1L);
@@ -73,7 +73,7 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testFindById() {
+    void testFindById() {
         Project project = new Project();
         project.setId(1L);
 
@@ -86,7 +86,7 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testGetAllProjects() {
+    void testGetAllProjects() {
         Project project = new Project();
         when(projectRepository.findAll()).thenReturn(Collections.singletonList(project));
 
@@ -97,7 +97,7 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testGetProjectsByUserId() {
+    void testGetProjectsByUserId() {
         Project project = new Project();
         when(projectRepository.findByProjectLeader_Id(1L)).thenReturn(Collections.singletonList(project));
 
@@ -108,7 +108,7 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testUpdateProject() {
+    void testUpdateProject() {
         Project project = new Project();
         project.setId(1L);
 
@@ -123,7 +123,7 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testRemoveUserFromProjectInternal() {
+    void testRemoveUserFromProjectInternal() {
         Project project = new Project();
         User user = new User();
         user.setId(1L);
@@ -139,7 +139,7 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testAddUserToProjectInternal() {
+    void testAddUserToProjectInternal() {
         Project project = new Project();
         User user = new User();
         user.setId(1L);

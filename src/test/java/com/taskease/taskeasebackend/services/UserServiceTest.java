@@ -15,7 +15,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;
 
-public class UserServiceTest {
+class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
@@ -24,12 +24,12 @@ public class UserServiceTest {
     private UserService userService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testGetUserById_UserExists() {
+    void testGetUserById_UserExists() {
         User user = new User();
         user.setId(1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -41,14 +41,14 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testGetUserById_UserNotFound() {
+    void testGetUserById_UserNotFound() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> userService.getUserById(1L));
     }
 
     @Test
-    public void testCreateUser() {
+    void testCreateUser() {
         User user = new User();
         user.setUsername("testuser");
         when(userRepository.save(user)).thenReturn(user);
@@ -60,7 +60,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testDeleteUserById() {
+    void testDeleteUserById() {
         doNothing().when(userRepository).deleteById(1L);
 
         userService.deleteUserById(1L);
@@ -69,7 +69,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testGetUserByUsername_UserExists() {
+    void testGetUserByUsername_UserExists() {
         User user = new User();
         user.setUsername("testuser");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
@@ -81,14 +81,14 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testGetUserByUsername_UserNotFound() {
+    void testGetUserByUsername_UserNotFound() {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> userService.getUserByUsername("testuser"));
     }
 
     @Test
-    public void testGetUserByEmail_UserExists() {
+    void testGetUserByEmail_UserExists() {
         User user = new User();
         user.setEmail("test@example.com");
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
@@ -100,14 +100,14 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testGetUserByEmail_UserNotFound() {
+    void testGetUserByEmail_UserNotFound() {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> userService.getUserByEmail("test@example.com"));
     }
 
     @Test
-    public void testUpdateUser_UserExists() {
+    void testUpdateUser_UserExists() {
         User user = new User();
         user.setId(1L);
         user.setUsername("updateduser");
@@ -121,7 +121,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testUpdateUser_UserNotFound() {
+    void testUpdateUser_UserNotFound() {
         User user = new User();
         user.setId(1L);
         when(userRepository.existsById(1L)).thenReturn(false);

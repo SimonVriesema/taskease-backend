@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.List;
 import java.util.Collections;
 
-public class TaskServiceTest {
+class TaskServiceTest {
 
     @Mock
     private TaskRepository taskRepository;
@@ -40,12 +40,12 @@ public class TaskServiceTest {
     private TaskService taskService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testCreateTask() {
+    void testCreateTask() {
         Task task = new Task();
         User user = new User();
         user.setId(1L);
@@ -61,7 +61,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void testCreateTaskForProject() throws InvalidInputDataException, UserNotFoundException, ProjectNotFoundException {
+    void testCreateTaskForProject() throws InvalidInputDataException, UserNotFoundException, ProjectNotFoundException {
         CreateTaskForProjectRequest request = new CreateTaskForProjectRequest();
         request.setTitle("New Task");
         request.setAssignedUserId(1L);
@@ -82,7 +82,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void testUpdateTask() throws InvalidInputDataException, TaskNotFoundException {
+    void testUpdateTask() throws InvalidInputDataException, TaskNotFoundException {
         Task task = new Task();
         task.setId(1L);
         task.setTitle("Updated Task");
@@ -97,7 +97,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void testDeleteTaskById() {
+    void testDeleteTaskById() {
         when(taskRepository.existsById(1L)).thenReturn(true);
         doNothing().when(taskRepository).deleteById(1L);
 
@@ -107,7 +107,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void testGetTasksByUserId() throws UserNotFoundException {
+    void testGetTasksByUserId() throws UserNotFoundException {
         User user = new User();
         user.setId(1L);
 
@@ -124,7 +124,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void testGetTasksFromProject() throws ProjectNotFoundException {
+    void testGetTasksFromProject() throws ProjectNotFoundException {
         Project project = mock(Project.class);
         Task task = new Task();
         task.setProject(project);
