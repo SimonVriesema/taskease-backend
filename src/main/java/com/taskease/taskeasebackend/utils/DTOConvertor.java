@@ -26,9 +26,9 @@ public class DTOConvertor {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
         userDTO.setEmail(user.getEmail());
-        userDTO.setUsername(user.getUsername());
         userDTO.setFirstName(user.getFirstName());
         userDTO.setLastName(user.getLastName());
+        userDTO.setUsername(user.getUsername());
         return userDTO;
     }
 

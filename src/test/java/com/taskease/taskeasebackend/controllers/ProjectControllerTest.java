@@ -48,7 +48,6 @@ class ProjectControllerTest {
 
         projectLeader = new User();
         projectLeader.setId(1L);
-        projectLeader.setUsername("Project Leader");
         projectLeader.setEmail("Project Leader Email");
 
         project = new Project();
