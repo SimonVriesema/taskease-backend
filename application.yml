@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taskease_db
+    username: postgres
+    password: SimonVriesema
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+security:
+  jwt:
+    token:
+      secret-key: ${JWT_SECRET:default_secret_key}
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+
+server:
+  servlet:
+    session:
+      timeout: 30m
