@@ -22,11 +22,11 @@ jobs:
           cache: maven
       - name: Build with Maven
         run: mvn clean install
-        working-directory: ./taskease-backend
 
   test:
     name: Test
     runs-on: ubuntu-latest
+    needs: build
     steps:
       # Checkout the latest code from the repository
       - uses: actions/checkout@v4
@@ -40,7 +40,6 @@ jobs:
       # Run tests using Maven in batch mode
       - name: Run tests with Maven
         run: mvn -B test
-        working-directory: ./taskease-backend
 
   sonarqube-analysis:
     name: Build and analyze
