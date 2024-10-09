@@ -27,8 +27,7 @@ jobs:
     needs: setup
     steps:
       - name: Build with Maven
-        run: mvn -B clean install
-        working-directory: ./taskease-backend
+        run: mvn clean install
 
   test:
     name: Test
